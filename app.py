@@ -1,9 +1,9 @@
 from flask import Flask, request, jsonify
 import dbm
-
+import os
 app = Flask(__name__)
 
-db_path = "/tmp/cache"
+db_path = os.environ.get('DB_PATH')
 
 @app.route("/", methods=['GET'])
 def index():

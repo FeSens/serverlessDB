@@ -17,6 +17,8 @@ functions:
   api:
     memorySize: 128
     handler: wsgi_handler.handler
+    environment:
+      DB_PATH: /mnt/db
     vpc:
       securityGroupIds:
         - !GetAtt MountTargetVPC.DefaultSecurityGroup
