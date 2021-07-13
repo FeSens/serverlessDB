@@ -25,15 +25,17 @@ def show(key):
 @app.route("/", methods=['POST'])
 def create():
   data = request.json
-  try:
-    with dbm.open(db_path, 'c') as db:
-      for k, v in data.items():
-        db[k] = v
+  while True:
+    try:
+      with dbm.open(db_path, 'c') as db:
+        for k, v in data.items():
+          db[k] = v
 
-    return jsonify(message="success")
-  
-  except Exception as e:
-    return jsonify(error=str(e))
+      return jsonify(message="success")
+    
+    except Exception as e:
+      pass
+      #return jsonify(error=str(e))
 
 @app.route("/<key>", methods=['DELETE'])
 def destroy(key):
