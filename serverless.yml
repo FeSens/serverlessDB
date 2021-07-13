@@ -9,11 +9,23 @@ custom:
 provider:
   name: aws
   runtime: python3.8
-  lambdaHashingVersion: '20201221'
+  profile: personal
+  iamManagedPolicies:
+    - "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientReadWriteAccess"
 
 functions:
   api:
+    memorySize: 128
     handler: wsgi_handler.handler
+    vpc:
+      securityGroupIds:
+        - !GetAtt MountTargetVPC.DefaultSecurityGroup
+      subnetIds:
+        - !Ref MountTargetSubnetOne
+    fileSystemConfig:
+      localMountPath: /mnt/db
+      arn: 
+        Fn::GetAtt: ['FileSysteAccessPoint', Arn]
     events:
       - http:
           path: /
@@ -21,6 +33,45 @@ functions:
       - http:
           path: /{proxy+}
           method: ANY
+
+resources:
+  Resources:
+    MountTargetVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 172.31.0.0/16
+  
+    MountTargetSubnetOne:
+      Type: AWS::EC2::Subnet
+      Properties:
+        CidrBlock: 172.31.1.0/24
+        VpcId: !Ref MountTargetVPC
+        AvailabilityZone: "us-east-1a"
+  
+    FileSystemResource:
+      Type: 'AWS::EFS::FileSystem'
+
+    MountTargetResource1:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref FileSystemResource
+        SubnetId: !Ref MountTargetSubnetOne
+        SecurityGroups:
+        - !GetAtt MountTargetVPC.DefaultSecurityGroup
+
+    FileSysteAccessPoint:
+      Type: "AWS::EFS::AccessPoint"
+      Properties:
+        FileSystemId: !Ref FileSystemResource
+        PosixUser:
+          Uid: "1000"
+          Gid: "1000"
+        RootDirectory:
+          CreationInfo:
+            OwnerUid: "1000"
+            OwnerGid: "1000"
+            Permissions: "0777"
+          Path: "/efs"
 
 plugins:
   - serverless-wsgi
